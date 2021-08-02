@@ -1,6 +1,3 @@
-import java.util.Arrays;
-import java.util.ArrayList;
-
 class Node {
 	public char charData;
 	public int intData;
@@ -49,123 +46,61 @@ class Main {
 
 	public static int expressionParser(String expression) {
 		String numberString = "";
-		ArrayList<Integer> operandDynamic = new ArrayList<>();
-		ArrayList<Character> operatorDynamic = new ArrayList<>();
-
-		for (int i = 0; i < expression.length() - 1; i++) {
-			if (Character.isDigit(expression.charAt(i))) {
-				numberString += expression.charAt(i);
-
-				if (!Character.isDigit(expression.charAt(i + 1))) {
-					operandDynamic.add(0, Integer.parseInt(numberString));
-					numberString = "";
-				}
-
-			} else {
-				operatorDynamic.add(0, expression.charAt(i));
-			}
-		}
-
-		if (Character.isDigit(expression.charAt(expression.length() - 1))) {
-			numberString += expression.charAt(expression.length() - 1);
-			operandDynamic.add(0, Integer.parseInt(numberString));
-		} else {
-			operatorDynamic.add(0, expression.charAt(expression.length() - 1));
-		}
-
-		// オペランドを保存用のスタックに入れる
-		Stack operands = new Stack();
-
-		for (int i = 0; i < operandDynamic.size(); i++) {
-			operands.push(new Node(operandDynamic.get(i)));
-		}
-
-		// 演算子を保存用のスタックに入れる
-		Stack operators = new Stack();
-
-		for (int i = 0; i < operatorDynamic.size(); i++) {
-			operators.push(new Node(operatorDynamic.get(i)));
-		}
-
+		int result = 0;
 		// オペランドスタック
 		Stack operandStack = new Stack();
 		// 演算子スタック
 		Stack operatorStack = new Stack();
 
-		// 演算子が(ならスタックにpushする
-		if (operators.peek() != null) {
-			while (operators.peek().charData == '(') {
-				operatorStack.push(operators.pop());
-			}
-		}
-
-		// operandsからオペランドを取り出してスタックにpushする
-		operandStack.push(operands.pop());
-		int result = operandStack.peek().intData;
-
-		while (operands.peek() != null) {
-
-			if (operators.peek().charData == ')') {
-				operators.pop();
-
-				while (operatorStack.peek().charData != '(') {
-					result = calculate(operandStack.pop().intData, operandStack.pop().intData,
-							operatorStack.pop().charData);
-					operandStack.push(new Node(result));
-				}
-
-				operatorStack.pop();
-			}
-
-			if (operatorStack.peek() == null || operatorStack.peek().charData == '(' && operators.peek() != null) {
-				operatorStack.push(operators.pop());
-
-				if (operators.peek() != null) {
-					while (operators.peek().charData == '(') {
-						operatorStack.push(operators.pop());
-					}
-				}
-
-				operandStack.push(operands.pop());
-
-			} else if (operatorStack.peek().charData == '+' || operatorStack.peek().charData == '-') {
-				if (operators.peek().charData == '*' || operators.peek().charData == '/'
-						|| operators.peek().charData == '^') {
-					operatorStack.push(operators.pop());
-
-					if (operators.peek() != null) {
-						while (operators.peek().charData == '(') {
-							operatorStack.push(operators.pop());
-						}
-					}
-
-					operandStack.push(operands.pop());
-
-				} else {
-					result = calculate(operandStack.pop().intData, operandStack.pop().intData,
-							operatorStack.pop().charData);
-					operandStack.push(new Node(result));
-				}
-
+		for (int i = 0; i < expression.length(); i++) {
+			char token = expression.charAt(i);
+			// tokenがオペランドの場合
+			if (Character.isDigit(token)) {
+				// 演算子が出てくるまで数字をnumberStringに追加する
+				numberString += token;
+				// tokenが演算子の場合
 			} else {
-				result = calculate(operandStack.pop().intData, operandStack.pop().intData,
-						operatorStack.pop().charData);
-				operandStack.push(new Node(result));
+				// 演算子までの数字をint型に変換してスタックにpushする
+				if (numberString != "") {
+					operandStack.push(new Node(Integer.parseInt(numberString)));
+					result = operandStack.peek().intData;
+				}
+				numberString = "";
+				// ()内を計算する
+				if (token == ')') {
+					while (operatorStack.peek().charData != '(') {
+						result = calculate(operandStack.pop().intData, operandStack.pop().intData,
+								operatorStack.pop().charData);
+						operandStack.push(new Node(result));
+					}
+					operatorStack.pop();
+				} else if (token == '(') {
+					operatorStack.push(new Node(token));
+				} else if (token == '*' || token == '/' || token == '^') {
+					if (operatorStack.peek() == null || operatorStack.peek().charData == '('
+							|| operatorStack.peek().charData == '+' || operatorStack.peek().charData == '-') {
+						operatorStack.push(new Node(token));
+					} else {
+						result = calculate(operandStack.pop().intData, operandStack.pop().intData,
+								operatorStack.pop().charData);
+						operandStack.push(new Node(result));
+						operatorStack.push(new Node(token));
+					}
+				} else {
+					if (operatorStack.peek() == null || operatorStack.peek().charData == '(') {
+						operatorStack.push(new Node(token));
+					} else {
+						result = calculate(operandStack.pop().intData, operandStack.pop().intData,
+								operatorStack.pop().charData);
+						operandStack.push(new Node(result));
+						operatorStack.push(new Node(token));
+					}
+				}
 			}
 		}
-
-		if (operators.peek() != null) {
-			if (operators.peek().charData == ')') {
-				operators.pop();
-
-				while (operatorStack.peek().charData != '(') {
-					result = calculate(operandStack.pop().intData, operandStack.pop().intData,
-							operatorStack.pop().charData);
-					operandStack.push(new Node(result));
-				}
-
-				operatorStack.pop();
-			}
+		if (numberString != "") {
+			operandStack.push(new Node(Integer.parseInt(numberString)));
+			result = operandStack.peek().intData;
 		}
 
 		while (operatorStack.peek() != null) {
