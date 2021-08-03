@@ -1,3 +1,6 @@
+/** 数式を表す文字列を読み込んで計算するプログラムです。*/
+/** 使用できる演算子は +、-、*、/、^、() です。*/
+
 class Node {
 	public char charData;
 	public int intData;
